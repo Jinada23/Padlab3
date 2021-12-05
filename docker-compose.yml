@@ -1,0 +1,60 @@
+version: '3'
+
+services:
+  mongodb1:
+    image: mongo
+    restart: always
+    container_name: mongodb1
+    expose:
+        - "27017"
+    entrypoint: [ "/usr/bin/mongod", "--replSet", "rsmongo", "--bind_ip_all" ]
+
+  mongodb2:
+    image: mongo
+    restart: always
+    container_name: mongodb2
+    expose:
+        - "27017"
+    entrypoint: [ "/usr/bin/mongod", "--replSet", "rsmongo", "--bind_ip_all" ]
+    
+  mongodb3:
+    image: mongo
+    restart: always
+    container_name: mongodb3
+    expose:
+        - "27017"
+    entrypoint: [ "/usr/bin/mongod", "--replSet", "rsmongo", "--bind_ip_all" ]
+  
+  mongosetup:
+    image: "mongo-setup"
+    build: "./Infrastructure/Mongo/"
+    container_name: "mongosetup"
+    depends_on:
+        - mongodb1
+
+  web:
+    build: .
+    image: src_image
+    expose:
+        - "80"
+    depends_on:
+        - mongodb1
+    links:
+      - mongodb1
+
+  nginx:
+    image: nginx_image
+    volumes:
+      - ./Infrastructure/Nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+    ports:
+      - "49282:49282"
+
+  redis:
+    image: redis_image
+    container_name: redis
+    ports:
+      - "6379:6379"
+    depends_on:
+      - web
